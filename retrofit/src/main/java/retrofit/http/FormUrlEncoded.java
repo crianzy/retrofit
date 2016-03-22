@@ -29,6 +29,12 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * Requests made with this annotation will have {@code application/x-www-form-urlencoded} MIME
  * type. Field names and values will be UTF-8 encoded before being URI-encoded in accordance to
  * <a href="http://tools.ietf.org/html/rfc3986">RFC-3986</a>.
+ *
+ * 使用URL 的编码格式
+ * 在 Post 请求中用到
+ *
+ * 需要post 提交的请求参数  需要 使用@Field 注解
+ *
  */
 @Documented
 @Target(METHOD)

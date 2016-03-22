@@ -43,6 +43,7 @@ public class GitHubClient {
         .build();
 
     // Create an instance of our GitHub API interface.
+    // 动态代理 创建一个 GitHub 接口额 impl 动态代理对象
     GitHub github = restAdapter.create(GitHub.class);
 
     // Fetch and print a list of the contributors to this library.

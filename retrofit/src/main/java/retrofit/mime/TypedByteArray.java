@@ -23,72 +23,82 @@ import java.util.Arrays;
 
 /**
  * Byte array and its mime type.
+ * <p>
+ * 直接数组  可用 与 http 请求 会 回复 的类型
  *
  * @author Bob Lee (bob@squareup.com)
  */
 public class TypedByteArray implements TypedInput, TypedOutput {
-  private final String mimeType;
-  private final byte[] bytes;
+    private final String mimeType;
+    private final byte[] bytes;
 
-  /**
-   * Constructs a new typed byte array.  Sets mimeType to {@code application/unknown} if absent.
-   *
-   * @throws NullPointerException if bytes are null
-   */
-  public TypedByteArray(String mimeType, byte[] bytes) {
-    if (mimeType == null) {
-      mimeType = "application/unknown";
+    /**
+     * Constructs a new typed byte array.  Sets mimeType to {@code application/unknown} if absent.
+     *
+     * @throws NullPointerException if bytes are null
+     */
+    public TypedByteArray(String mimeType, byte[] bytes) {
+        if (mimeType == null) {
+            mimeType = "application/unknown";
+        }
+        if (bytes == null) {
+            throw new NullPointerException("bytes");
+        }
+        this.mimeType = mimeType;
+        this.bytes = bytes;
     }
-    if (bytes == null) {
-      throw new NullPointerException("bytes");
+
+    public byte[] getBytes() {
+        return bytes;
     }
-    this.mimeType = mimeType;
-    this.bytes = bytes;
-  }
 
-  public byte[] getBytes() {
-    return bytes;
-  }
+    @Override
+    public String fileName() {
+        return null;
+    }
 
-  @Override public String fileName() {
-    return null;
-  }
+    @Override
+    public String mimeType() {
+        return mimeType;
+    }
 
-  @Override public String mimeType() {
-    return mimeType;
-  }
+    @Override
+    public long length() {
+        return bytes.length;
+    }
 
-  @Override public long length() {
-    return bytes.length;
-  }
+    @Override
+    public void writeTo(OutputStream out) throws IOException {
+        out.write(bytes);
+    }
 
-  @Override public void writeTo(OutputStream out) throws IOException {
-    out.write(bytes);
-  }
+    @Override
+    public InputStream in() throws IOException {
+        return new ByteArrayInputStream(bytes);
+    }
 
-  @Override public InputStream in() throws IOException {
-    return new ByteArrayInputStream(bytes);
-  }
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
 
-  @Override public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+        TypedByteArray that = (TypedByteArray) o;
 
-    TypedByteArray that = (TypedByteArray) o;
+        if (!Arrays.equals(bytes, that.bytes)) return false;
+        if (!mimeType.equals(that.mimeType)) return false;
 
-    if (!Arrays.equals(bytes, that.bytes)) return false;
-    if (!mimeType.equals(that.mimeType)) return false;
+        return true;
+    }
 
-    return true;
-  }
+    @Override
+    public int hashCode() {
+        int result = mimeType.hashCode();
+        result = 31 * result + Arrays.hashCode(bytes);
+        return result;
+    }
 
-  @Override public int hashCode() {
-    int result = mimeType.hashCode();
-    result = 31 * result + Arrays.hashCode(bytes);
-    return result;
-  }
-
-  @Override public String toString() {
-    return "TypedByteArray[length=" + length() + "]";
-  }
+    @Override
+    public String toString() {
+        return "TypedByteArray[length=" + length() + "]";
+    }
 }

@@ -22,22 +22,24 @@ import java.io.IOException;
  * thread-safe as invocation may happen from multiple threads simultaneously.
  */
 public interface Client {
-  /**
-   * Synchronously execute an HTTP represented by {@code request} and encapsulate all response data
-   * into a {@link Response} instance.
-   * <p>
-   * Note: If the request has a body, its length and mime type will have already been added to the
-   * header list as {@code Content-Length} and {@code Content-Type}, respectively. Do NOT alter
-   * these values as they might have been set as a result of an application-level configuration.
-   */
-  Response execute(Request request) throws IOException;
+    /**
+     * Synchronously execute an HTTP represented by {@code request} and encapsulate all response data
+     * into a {@link Response} instance.
+     * <p>
+     * Note: If the request has a body, its length and mime type will have already been added to the
+     * header list as {@code Content-Length} and {@code Content-Type}, respectively. Do NOT alter
+     * these values as they might have been set as a result of an application-level configuration.
+     */
+    Response execute(Request request) throws IOException;
 
-  /**
-   * Deferred means of obtaining a {@link Client}. For asynchronous requests this will always be
-   * called on a background thread.
-   */
-  interface Provider {
-    /** Obtain an HTTP client. Called once for each request. */
-    Client get();
-  }
+    /**
+     * Deferred means of obtaining a {@link Client}. For asynchronous requests this will always be
+     * called on a background thread.
+     */
+    interface Provider {
+        /**
+         * Obtain an HTTP client. Called once for each request.
+         */
+        Client get();
+    }
 }

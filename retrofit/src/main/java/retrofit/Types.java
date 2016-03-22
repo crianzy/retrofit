@@ -28,6 +28,7 @@ import java.util.NoSuchElementException;
 /**
  * Static methods for working with types.
  *
+ * 类型的一个 工具类
  * @author Bob Lee
  * @author Jesse Wilson
  */

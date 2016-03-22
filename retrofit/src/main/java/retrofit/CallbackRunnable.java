@@ -26,35 +26,41 @@ import static retrofit.RetrofitError.unexpectedError;
  * {@link Callback}.
  */
 abstract class CallbackRunnable<T> implements Runnable {
-  private final Callback<T> callback;
-  private final Executor callbackExecutor;
-  private final ErrorHandler errorHandler;
+    private final Callback<T> callback;
+    private final Executor callbackExecutor;
+    private final ErrorHandler errorHandler;
 
-  CallbackRunnable(Callback<T> callback, Executor callbackExecutor, ErrorHandler errorHandler) {
-    this.callback = callback;
-    this.callbackExecutor = callbackExecutor;
-    this.errorHandler = errorHandler;
-  }
-
-  @SuppressWarnings("unchecked")
-  @Override public final void run() {
-    try {
-      final ResponseWrapper wrapper = obtainResponse();
-      callbackExecutor.execute(new Runnable() {
-        @Override public void run() {
-          callback.success((T) wrapper.responseBody, wrapper.response);
-        }
-      });
-    } catch (RetrofitError e) {
-      Throwable cause = errorHandler.handleError(e);
-      final RetrofitError handled = cause == e ? e : unexpectedError(e.getUrl(), cause);
-      callbackExecutor.execute(new Runnable() {
-        @Override public void run() {
-          callback.failure(handled);
-        }
-      });
+    CallbackRunnable(Callback<T> callback, Executor callbackExecutor, ErrorHandler errorHandler) {
+        this.callback = callback;
+        this.callbackExecutor = callbackExecutor;
+        this.errorHandler = errorHandler;
     }
-  }
 
-  public abstract ResponseWrapper obtainResponse();
+    @SuppressWarnings("unchecked")
+    @Override
+    public final void run() {
+        try {
+            // 获取执行 http 请求后的 返回独享
+            final ResponseWrapper wrapper = obtainResponse();
+            callbackExecutor.execute(new Runnable() {
+                @Override
+                public void run() {
+                    // 回到成功
+                    callback.success((T) wrapper.responseBody, wrapper.response);
+                }
+            });
+        } catch (RetrofitError e) {
+            // 回调失败
+            Throwable cause = errorHandler.handleError(e);
+            final RetrofitError handled = cause == e ? e : unexpectedError(e.getUrl(), cause);
+            callbackExecutor.execute(new Runnable() {
+                @Override
+                public void run() {
+                    callback.failure(handled);
+                }
+            });
+        }
+    }
+
+    public abstract ResponseWrapper obtainResponse();
 }

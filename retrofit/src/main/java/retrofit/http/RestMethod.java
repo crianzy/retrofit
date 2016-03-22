@@ -25,6 +25,10 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Documented
 @Target(ANNOTATION_TYPE)
 @Retention(RUNTIME)
+
+/**
+ * 请求方式的注解
+ */
 public @interface RestMethod {
   String value();
   boolean hasBody() default false;

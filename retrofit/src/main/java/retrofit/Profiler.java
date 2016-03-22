@@ -18,6 +18,9 @@ package retrofit;
 /**
  * A hook allowing clients to log HTTP method times and response status codes.
  *
+ * 一个 钩子
+ * 记录请求时间,  和 返回状态代码
+ *
  * @author Eric Burke (eric@squareup.com)
  */
 public interface Profiler<T> {

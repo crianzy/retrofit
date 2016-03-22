@@ -15,43 +15,48 @@
  */
 package retrofit.client;
 
-/** Represents an HTTP header name/value pair. */
+/**
+ * Represents an HTTP header name/value pair.
+ */
 public final class Header {
-  private final String name;
-  private final String value;
+    private final String name;
+    private final String value;
 
-  public Header(String name, String value) {
-    this.name = name;
-    this.value = value;
-  }
+    public Header(String name, String value) {
+        this.name = name;
+        this.value = value;
+    }
 
-  public String getName() {
-    return name;
-  }
+    public String getName() {
+        return name;
+    }
 
-  public String getValue() {
-    return value;
-  }
+    public String getValue() {
+        return value;
+    }
 
-  @Override public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
 
-    Header header = (Header) o;
+        Header header = (Header) o;
 
-    if (name != null ? !name.equals(header.name) : header.name != null) return false;
-    if (value != null ? !value.equals(header.value) : header.value != null) return false;
+        if (name != null ? !name.equals(header.name) : header.name != null) return false;
+        if (value != null ? !value.equals(header.value) : header.value != null) return false;
 
-    return true;
-  }
+        return true;
+    }
 
-  @Override public int hashCode() {
-    int result = name != null ? name.hashCode() : 0;
-    result = 31 * result + (value != null ? value.hashCode() : 0);
-    return result;
-  }
+    @Override
+    public int hashCode() {
+        int result = name != null ? name.hashCode() : 0;
+        result = 31 * result + (value != null ? value.hashCode() : 0);
+        return result;
+    }
 
-  @Override public String toString() {
-    return (name != null ? name : "") + ": " + (value != null ? value : "");
-  }
+    @Override
+    public String toString() {
+        return (name != null ? name : "") + ": " + (value != null ? value : "");
+    }
 }

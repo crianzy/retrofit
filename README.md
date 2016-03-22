@@ -9,6 +9,8 @@ For more information please see [the website][1].
 Download
 --------
 
+Use IntelliJ Open this Project
+
 Download [the latest JAR][2] or grab via Maven:
 ```xml
 <dependency>

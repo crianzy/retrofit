@@ -21,12 +21,20 @@ import java.io.OutputStream;
 import java.net.URLEncoder;
 
 public final class FormUrlEncodedTypedOutput implements TypedOutput {
+  // 内容是一个 二进制流
   final ByteArrayOutputStream content = new ByteArrayOutputStream();
 
   public void addField(String name, String value) {
     addField(name, true, value, true);
   }
 
+  /**
+   * 向body 中加一个 fidel
+   * @param name
+   * @param encodeName
+   * @param value
+   * @param encodeValue
+     */
   public void addField(String name, boolean encodeName, String value, boolean encodeValue) {
     if (name == null) {
       throw new NullPointerException("name");

@@ -18,6 +18,7 @@ package retrofit.client;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
 import retrofit.mime.TypedInput;
 
 /**
@@ -28,55 +29,66 @@ import retrofit.mime.TypedInput;
  * unbuffered stream from the network.
  */
 public final class Response {
-  private final String url;
-  private final int status;
-  private final String reason;
-  private final List<Header> headers;
-  private final TypedInput body;
+    private final String url;
+    private final int status;
+    private final String reason;
+    private final List<Header> headers;
+    // body 这个是主要内容
+    private final TypedInput body;
 
-  public Response(String url, int status, String reason, List<Header> headers, TypedInput body) {
-    if (url == null) {
-      throw new IllegalArgumentException("url == null");
+    public Response(String url, int status, String reason, List<Header> headers, TypedInput body) {
+        if (url == null) {
+            throw new IllegalArgumentException("url == null");
+        }
+        if (status < 200) {
+            throw new IllegalArgumentException("Invalid status code: " + status);
+        }
+        if (reason == null) {
+            throw new IllegalArgumentException("reason == null");
+        }
+        if (headers == null) {
+            throw new IllegalArgumentException("headers == null");
+        }
+
+        this.url = url;
+        this.status = status;
+        this.reason = reason;
+        this.headers = Collections.unmodifiableList(new ArrayList<Header>(headers));
+        this.body = body;
     }
-    if (status < 200) {
-      throw new IllegalArgumentException("Invalid status code: " + status);
-    }
-    if (reason == null) {
-      throw new IllegalArgumentException("reason == null");
-    }
-    if (headers == null) {
-      throw new IllegalArgumentException("headers == null");
+
+    /**
+     * Request URL.
+     */
+    public String getUrl() {
+        return url;
     }
 
-    this.url = url;
-    this.status = status;
-    this.reason = reason;
-    this.headers = Collections.unmodifiableList(new ArrayList<Header>(headers));
-    this.body = body;
-  }
+    /**
+     * Status line code.
+     */
+    public int getStatus() {
+        return status;
+    }
 
-  /** Request URL. */
-  public String getUrl() {
-    return url;
-  }
+    /**
+     * Status line reason phrase.
+     */
+    public String getReason() {
+        return reason;
+    }
 
-  /** Status line code. */
-  public int getStatus() {
-    return status;
-  }
+    /**
+     * An unmodifiable collection of headers.
+     */
+    public List<Header> getHeaders() {
+        return headers;
+    }
 
-  /** Status line reason phrase. */
-  public String getReason() {
-    return reason;
-  }
-
-  /** An unmodifiable collection of headers. */
-  public List<Header> getHeaders() {
-    return headers;
-  }
-
-  /** Response body. May be {@code null}. */
-  public TypedInput getBody() {
-    return body;
-  }
+    /**
+     * Response body. May be {@code null}.
+     */
+    public TypedInput getBody() {
+        return body;
+    }
 }
