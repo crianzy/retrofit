@@ -22,25 +22,29 @@ import java.lang.reflect.Type;
  * Creates call adapters for that uses the same thread for both I/O and application-level
  * callbacks. For synchronous calls this is the application thread making the request; for
  * asynchronous calls this is a thread provided by OkHttp's dispatcher.
+ * 默认的回调适配器 工厂
  */
 final class DefaultCallAdapterFactory extends CallAdapter.Factory {
-  static final CallAdapter.Factory INSTANCE = new DefaultCallAdapterFactory();
+    static final CallAdapter.Factory INSTANCE = new DefaultCallAdapterFactory();
 
-  @Override
-  public CallAdapter<?> get(Type returnType, Annotation[] annotations, Retrofit retrofit) {
-    if (getRawType(returnType) != Call.class) {
-      return null;
+    @Override
+    public CallAdapter<?> get(Type returnType, Annotation[] annotations, Retrofit retrofit) {
+        if (getRawType(returnType) != Call.class) {
+            return null;
+        }
+
+        // 获取 方法中 数据 返回的 类型
+        final Type responseType = Utils.getCallResponseType(returnType);
+        return new CallAdapter<Call<?>>() {
+            @Override
+            public Type responseType() {
+                return responseType;
+            }
+
+            @Override
+            public <R> Call<R> adapt(Call<R> call) {
+                return call;
+            }
+        };
     }
-
-    final Type responseType = Utils.getCallResponseType(returnType);
-    return new CallAdapter<Call<?>>() {
-      @Override public Type responseType() {
-        return responseType;
-      }
-
-      @Override public <R> Call<R> adapt(Call<R> call) {
-        return call;
-      }
-    };
-  }
 }
