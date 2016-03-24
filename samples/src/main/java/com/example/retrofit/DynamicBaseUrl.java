@@ -62,6 +62,7 @@ public final class DynamicBaseUrl {
   public static void main(String... args) throws IOException {
     HostSelectionInterceptor hostSelectionInterceptor = new HostSelectionInterceptor();
 
+    // 在 okHttp 这里设置拦截器
     OkHttpClient okHttpClient = new OkHttpClient.Builder()
         .addInterceptor(hostSelectionInterceptor)
         .build();

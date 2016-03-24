@@ -24,7 +24,7 @@ import okhttp3.ResponseBody;
 import retrofit2.http.Streaming;
 
 /**
- * 转换器
+ * 默认的转换器
  */
 final class BuiltInConverters extends Converter.Factory {
     @Override

@@ -20,6 +20,7 @@ import java.lang.annotation.Annotation;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 import java.lang.reflect.Type;
+
 import okhttp3.MediaType;
 import okhttp3.RequestBody;
 import okhttp3.ResponseBody;
@@ -38,92 +39,102 @@ import static java.lang.annotation.ElementType.PARAMETER;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 public final class ChunkingConverter {
-  @Target(PARAMETER)
-  @Retention(RUNTIME)
-  @interface Chunked {
-  }
+    @Target(PARAMETER)
+    @Retention(RUNTIME)
+    // 表示 post 请求是否分块传输
+    @interface Chunked {
+    }
 
-  /**
-   * A converter which removes known content lengths to force chunking when {@code @Chunked} is
-   * present on {@code @Body} params.
-   */
-  static class ChunkingConverterFactory extends Converter.Factory {
-    @Override
-    public Converter<?, RequestBody> requestBodyConverter(Type type,
-        Annotation[] parameterAnnotations, Annotation[] methodAnnotations, Retrofit retrofit) {
-      boolean isBody = false;
-      boolean isChunked = false;
-      for (Annotation annotation : parameterAnnotations) {
-        isBody |= annotation instanceof Body;
-        isChunked |= annotation instanceof Chunked;
-      }
-      if (!isBody || !isChunked) {
-        return null;
-      }
-
-      // Look up the real converter to delegate to.
-      final Converter<Object, RequestBody> delegate =
-          retrofit.nextRequestBodyConverter(this, type, parameterAnnotations, methodAnnotations);
-      // Wrap it in a Converter which removes the content length from the delegate's body.
-      return new Converter<Object, RequestBody>() {
-        @Override public RequestBody convert(Object value) throws IOException {
-          final RequestBody realBody = delegate.convert(value);
-          return new RequestBody() {
-            @Override public MediaType contentType() {
-              return realBody.contentType();
+    /**
+     * A converter which removes known content lengths to force chunking when {@code @Chunked} is
+     * present on {@code @Body} params.
+     *
+     * 转换后 去掉了  content lengths  就能达到分块传输的目的
+     */
+    static class ChunkingConverterFactory extends Converter.Factory {
+        @Override
+        public Converter<?, RequestBody> requestBodyConverter(Type type,
+                                                              Annotation[] parameterAnnotations, Annotation[] methodAnnotations, Retrofit retrofit) {
+            boolean isBody = false;
+            boolean isChunked = false;
+            // 判断是否符合要求的 逻辑
+            for (Annotation annotation : parameterAnnotations) {
+                isBody |= annotation instanceof Body;
+                isChunked |= annotation instanceof Chunked;
+            }
+            if (!isBody || !isChunked) {
+                return null;
             }
 
-            @Override public void writeTo(BufferedSink sink) throws IOException {
-              realBody.writeTo(sink);
-            }
-          };
+            // Look up the real converter to delegate to.
+            // 找 在自己后面的 转换器
+            final Converter<Object, RequestBody> delegate =
+                    retrofit.nextRequestBodyConverter(this, type, parameterAnnotations, methodAnnotations);
+            // Wrap it in a Converter which removes the content length from the delegate's body.
+            return new Converter<Object, RequestBody>() {
+                @Override
+                public RequestBody convert(Object value) throws IOException {
+                    final RequestBody realBody = delegate.convert(value);
+                    // 更具 retrofit 已经穿在 convert 转换出来的 RequestBody  再处理一下
+                    return new RequestBody() {
+                        @Override
+                        public MediaType contentType() {
+                            return realBody.contentType();
+                        }
+
+                        @Override
+                        public void writeTo(BufferedSink sink) throws IOException {
+                            realBody.writeTo(sink);
+                        }
+                    };
+                }
+            };
         }
-      };
     }
-  }
 
-  static class Repo {
-    final String owner;
-    final String name;
+    static class Repo {
+        final String owner;
+        final String name;
 
-    Repo(String owner, String name) {
-      this.owner = owner;
-      this.name = name;
+        Repo(String owner, String name) {
+            this.owner = owner;
+            this.name = name;
+        }
     }
-  }
 
-  interface Service {
-    @POST("/")
-    Call<ResponseBody> sendNormal(@Body Repo repo);
-    @POST("/")
-    Call<ResponseBody> sendChunked(@Chunked @Body Repo repo);
-  }
+    interface Service {
+        @POST("/")
+        Call<ResponseBody> sendNormal(@Body Repo repo);
 
-  public static void main(String... args) throws IOException, InterruptedException {
-    MockWebServer server = new MockWebServer();
-    server.enqueue(new MockResponse());
-    server.enqueue(new MockResponse());
-    server.start();
+        @POST("/")
+        Call<ResponseBody> sendChunked(@Chunked @Body Repo repo);
+    }
 
-    Retrofit retrofit = new Retrofit.Builder()
-        .baseUrl(server.url("/"))
-        .addConverterFactory(new ChunkingConverterFactory())
-        .addConverterFactory(GsonConverterFactory.create())
-        .build();
-    Service service = retrofit.create(Service.class);
+    public static void main(String... args) throws IOException, InterruptedException {
+        MockWebServer server = new MockWebServer();
+        server.enqueue(new MockResponse());
+        server.enqueue(new MockResponse());
+        server.start();
 
-    Repo retrofitRepo = new Repo("square", "retrofit");
+        Retrofit retrofit = new Retrofit.Builder()
+                .baseUrl(server.url("/"))
+                .addConverterFactory(new ChunkingConverterFactory())
+                .addConverterFactory(GsonConverterFactory.create())
+                .build();
+        Service service = retrofit.create(Service.class);
 
-    service.sendNormal(retrofitRepo).execute();
-    RecordedRequest normalRequest = server.takeRequest();
-    System.out.println(
-        "Normal @Body Transfer-Encoding: " + normalRequest.getHeader("Transfer-Encoding"));
+        Repo retrofitRepo = new Repo("square", "retrofit");
 
-    service.sendChunked(retrofitRepo).execute();
-    RecordedRequest chunkedRequest = server.takeRequest();
-    System.out.println(
-        "@Chunked @Body Transfer-Encoding: " + chunkedRequest.getHeader("Transfer-Encoding"));
+        service.sendNormal(retrofitRepo).execute();
+        RecordedRequest normalRequest = server.takeRequest();
+        System.out.println(
+                "Normal @Body Transfer-Encoding: " + normalRequest.getHeader("Transfer-Encoding"));
 
-    server.shutdown();
-  }
+        service.sendChunked(retrofitRepo).execute();
+        RecordedRequest chunkedRequest = server.takeRequest();
+        System.out.println(
+                "@Chunked @Body Transfer-Encoding: " + chunkedRequest.getHeader("Transfer-Encoding"));
+
+        server.shutdown();
+    }
 }
