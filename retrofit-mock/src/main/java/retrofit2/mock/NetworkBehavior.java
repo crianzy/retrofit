@@ -35,118 +35,155 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * <p>
  * By default, instances of this class will use a 2 second delay with 40% variance and failures
  * will occur 3% of the time.
+ *
+ * 网络 行为 模拟不同的网络环境
  */
 public final class NetworkBehavior {
-  private static final int DEFAULT_DELAY_MS = 2000; // Network calls will take 2 seconds.
-  private static final int DEFAULT_VARIANCE_PERCENT = 40; // Network delay varies by ±40%.
-  private static final int DEFAULT_FAILURE_PERCENT = 3; // 3% of network calls will fail.
+    // 默认延迟 2s
+    private static final int DEFAULT_DELAY_MS = 2000; // Network calls will take 2 seconds.
+    // 40% 上下的变化
+    private static final int DEFAULT_VARIANCE_PERCENT = 40; // Network delay varies by ±40%.
 
-  /** Applies {@link NetworkBehavior} to instances of {@code T}. */
-  public interface Adapter<T> {
+    // 3% 的请求会失败
+    private static final int DEFAULT_FAILURE_PERCENT = 3; // 3% of network calls will fail.
+
     /**
-     * Apply {@code behavior} to {@code value} so that it exhibits the configured network behavior
-     * traits when interacted with.
+     * Applies {@link NetworkBehavior} to instances of {@code T}.
      */
-    T applyBehavior(NetworkBehavior behavior, T value);
-  }
-
-  /** Create an instance with default behavior. */
-  public static NetworkBehavior create() {
-    return new NetworkBehavior(new Random());
-  }
-
-  /**
-   * Create an instance with default behavior which uses {@code random} to control variance and
-   * failure calculation.
-   */
-  public static NetworkBehavior create(Random random) {
-    if (random == null) throw new NullPointerException("random == null");
-    return new NetworkBehavior(random);
-  }
-
-  private final Random random;
-
-  private volatile long delayMs = DEFAULT_DELAY_MS;
-  private volatile int variancePercent = DEFAULT_VARIANCE_PERCENT;
-  private volatile int failurePercent = DEFAULT_FAILURE_PERCENT;
-  private volatile Throwable failureException = new IOException("Mock failure!");
-
-  private NetworkBehavior(Random random) {
-    this.random = random;
-  }
-
-  /** Set the network round trip delay. */
-  public void setDelay(long amount, TimeUnit unit) {
-    if (amount < 0) {
-      throw new IllegalArgumentException("Amount must be positive value.");
+    public interface Adapter<T> {
+        /**
+         * Apply {@code behavior} to {@code value} so that it exhibits the configured network behavior
+         * traits when interacted with.
+         */
+        T applyBehavior(NetworkBehavior behavior, T value);
     }
-    this.delayMs = unit.toMillis(amount);
-  }
 
-  /** The network round trip delay. */
-  public long delay(TimeUnit unit) {
-    return MILLISECONDS.convert(delayMs, unit);
-  }
-
-  /** Set the plus-or-minus variance percentage of the network round trip delay. */
-  public void setVariancePercent(int variancePercent) {
-    if (variancePercent < 0 || variancePercent > 100) {
-      throw new IllegalArgumentException("Variance percentage must be between 0 and 100.");
+    /**
+     * Create an instance with default behavior.
+     */
+    public static NetworkBehavior create() {
+        return new NetworkBehavior(new Random());
     }
-    this.variancePercent = variancePercent;
-  }
 
-  /** The plus-or-minus variance percentage of the network round trip delay. */
-  public int variancePercent() {
-    return variancePercent;
-  }
-
-  /** Set the percentage of calls to {@link #calculateIsFailure()} that return {@code true}. */
-  public void setFailurePercent(int failurePercent) {
-    if (failurePercent < 0 || failurePercent > 100) {
-      throw new IllegalArgumentException("Failure percentage must be between 0 and 100.");
+    /**
+     * Create an instance with default behavior which uses {@code random} to control variance and
+     * failure calculation.
+     */
+    public static NetworkBehavior create(Random random) {
+        if (random == null) throw new NullPointerException("random == null");
+        return new NetworkBehavior(random);
     }
-    this.failurePercent = failurePercent;
-  }
 
-  /** The percentage of calls to {@link #calculateIsFailure()} that return {@code true}. */
-  public int failurePercent() {
-    return failurePercent;
-  }
+    // 随机种子 参数随机数 的对象
+    private final Random random;
 
-  /** Set the exception to be used when a failure is triggered. */
-  public void setFailureException(Throwable t) {
-    if (t == null) {
-      throw new NullPointerException("t == null");
+    private volatile long delayMs = DEFAULT_DELAY_MS;
+    private volatile int variancePercent = DEFAULT_VARIANCE_PERCENT;
+    private volatile int failurePercent = DEFAULT_FAILURE_PERCENT;
+    private volatile Throwable failureException = new IOException("Mock failure!");
+
+    private NetworkBehavior(Random random) {
+        this.random = random;
     }
-    this.failureException = t;
-  }
 
-  /** The exception to be used when a failure is triggered. */
-  public Throwable failureException() {
-    return failureException;
-  }
+    /**
+     * Set the network round trip delay.
+     * 设置延迟时间
+     */
+    public void setDelay(long amount, TimeUnit unit) {
+        if (amount < 0) {
+            throw new IllegalArgumentException("Amount must be positive value.");
+        }
+        this.delayMs = unit.toMillis(amount);
+    }
 
-  /**
-   * Randomly determine whether this call should result in a network failure in accordance with
-   * configured behavior. When true, {@link #failureException()} should be thrown.
-   */
-  public boolean calculateIsFailure() {
-    int randomValue = random.nextInt(100);
-    return randomValue < failurePercent;
-  }
+    /**
+     * The network round trip delay.
+     * 设置延迟的 时间类型  秒 毫秒 分 这些
+     */
+    public long delay(TimeUnit unit) {
+        return MILLISECONDS.convert(delayMs, unit);
+    }
 
-  /**
-   * Get the delay that should be used for delaying a response in accordance with configured
-   * behavior.
-   */
-  public long calculateDelay(TimeUnit unit) {
-    float delta = variancePercent / 100f; // e.g., 20 / 100f == 0.2f
-    float lowerBound = 1f - delta; // 0.2f --> 0.8f
-    float upperBound = 1f + delta; // 0.2f --> 1.2f
-    float bound = upperBound - lowerBound; // 1.2f - 0.8f == 0.4f
-    float delayPercent = lowerBound + (random.nextFloat() * bound); // 0.8 + (rnd * 0.4)
-    long callDelayMs = (long) (delayMs * delayPercent);
-    return MILLISECONDS.convert(callDelayMs, unit);
-  }
+    /**
+     * Set the plus-or-minus variance percentage of the network round trip delay.
+     * 这种不稳地的比例
+     */
+    public void setVariancePercent(int variancePercent) {
+        if (variancePercent < 0 || variancePercent > 100) {
+            throw new IllegalArgumentException("Variance percentage must be between 0 and 100.");
+        }
+        this.variancePercent = variancePercent;
+    }
+
+    /**
+     * The plus-or-minus variance percentage of the network round trip delay.
+     */
+    public int variancePercent() {
+        return variancePercent;
+    }
+
+    /**
+     * Set the percentage of calls to {@link #calculateIsFailure()} that return {@code true}.
+     *
+     * 设置失败的比例
+     */
+    public void setFailurePercent(int failurePercent) {
+        if (failurePercent < 0 || failurePercent > 100) {
+            throw new IllegalArgumentException("Failure percentage must be between 0 and 100.");
+        }
+        this.failurePercent = failurePercent;
+    }
+
+    /**
+     * The percentage of calls to {@link #calculateIsFailure()} that return {@code true}.
+     */
+    public int failurePercent() {
+        return failurePercent;
+    }
+
+    /**
+     * Set the exception to be used when a failure is triggered.
+     * 设置失败时 的异常
+     */
+    public void setFailureException(Throwable t) {
+        if (t == null) {
+            throw new NullPointerException("t == null");
+        }
+        this.failureException = t;
+    }
+
+    /**
+     * The exception to be used when a failure is triggered.
+     */
+    public Throwable failureException() {
+        return failureException;
+    }
+
+    /**
+     * Randomly determine whether this call should result in a network failure in accordance with
+     * configured behavior. When true, {@link #failureException()} should be thrown.
+     *
+     * 计算是否 失败
+     */
+    public boolean calculateIsFailure() {
+        int randomValue = random.nextInt(100);
+        return randomValue < failurePercent;
+    }
+
+    /**
+     * Get the delay that should be used for delaying a response in accordance with configured
+     * behavior.
+     *
+     * 计算延迟时间  计入了不稳定的 比例
+     */
+    public long calculateDelay(TimeUnit unit) {
+        float delta = variancePercent / 100f; // e.g., 20 / 100f == 0.2f
+        float lowerBound = 1f - delta; // 0.2f --> 0.8f
+        float upperBound = 1f + delta; // 0.2f --> 1.2f
+        float bound = upperBound - lowerBound; // 1.2f - 0.8f == 0.4f
+        float delayPercent = lowerBound + (random.nextFloat() * bound); // 0.8 + (rnd * 0.4)
+        long callDelayMs = (long) (delayMs * delayPercent);
+        return MILLISECONDS.convert(callDelayMs, unit);
+    }
 }

@@ -20,6 +20,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import retrofit2.Retrofit;
 
+/**
+ * Mock  虚拟的意思
+ * 这个是一个 包装的 retrofit
+ */
 public final class MockRetrofit {
   private final Retrofit retrofit;
   private final NetworkBehavior behavior;
@@ -44,6 +48,7 @@ public final class MockRetrofit {
   }
 
   @SuppressWarnings("unchecked") // Single-interface proxy creation guarded by parameter safety.
+  // 模拟 Retrofit 的 creat
   public <T> BehaviorDelegate<T> create(Class<T> service) {
     return new BehaviorDelegate<>(retrofit, behavior, executor, service);
   }
